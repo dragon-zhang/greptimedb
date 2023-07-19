@@ -32,7 +32,7 @@ use tonic::codegen::http::{HeaderMap, HeaderValue};
 use tonic::metadata::MetadataMap;
 use tonic::Code;
 
-use crate::auth;
+use crate::{auth, source_error_str};
 
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub))]
@@ -472,7 +472,11 @@ impl From<Error> for tonic::Status {
         }
 
         let metadata = MetadataMap::from_headers(headers);
-        tonic::Status::with_metadata(status_to_tonic_code(status_code), err.to_string(), metadata)
+        tonic::Status::with_metadata(
+            status_to_tonic_code(status_code),
+            source_error_str(err),
+            metadata,
+        )
     }
 }
 

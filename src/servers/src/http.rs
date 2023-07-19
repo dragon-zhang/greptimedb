@@ -79,6 +79,7 @@ use crate::query_handler::{
     PromStoreProtocolHandlerRef, ScriptHandlerRef,
 };
 use crate::server::Server;
+use crate::source_error_str;
 
 /// create query context from database name information, catalog and schema are
 /// resolved from the name
@@ -96,7 +97,7 @@ pub(crate) async fn query_context_from_db(
                 StatusCode::DatabaseNotFound,
             )),
             Err(e) => Err(JsonResponse::with_error(
-                format!("Error checking database: {db}, {e}"),
+                source_error_str(&e),
                 StatusCode::Internal,
             )),
         }
@@ -321,10 +322,7 @@ impl JsonResponse {
                         },
 
                         Err(e) => {
-                            return Self::with_error(
-                                format!("Recordbatch error: {e}"),
-                                e.status_code(),
-                            );
+                            return Self::with_error(source_error_str(&e), e.status_code());
                         }
                     }
                 }
@@ -337,10 +335,7 @@ impl JsonResponse {
                     }
                 },
                 Err(e) => {
-                    return Self::with_error(
-                        format!("Query engine output error: {e}"),
-                        e.status_code(),
-                    );
+                    return Self::with_error(source_error_str(&e), e.status_code());
                 }
             }
         }
@@ -767,7 +762,7 @@ async fn handle_error(err: BoxError) -> Json<JsonResponse> {
     logging::error!("Unhandled internal error: {}", err);
 
     Json(JsonResponse::with_error(
-        format!("Unhandled internal error: {err}"),
+        source_error_str(&*err),
         StatusCode::Unexpected,
     ))
 }
